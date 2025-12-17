@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Broker Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .stock { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<h2>Login</h2>
+<input id="email" placeholder="Enter email" />
+<button onclick="login()">Login</button>
+
+<div id="dashboard" style="display:none;">
+  <h3>Select Stocks</h3>
+
+  <label><input type="checkbox" value="GOOG"> GOOG</label><br>
+  <label><input type="checkbox" value="TSLA"> TSLA</label><br>
+  <label><input type="checkbox" value="AMZN"> AMZN</label><br>
+  <label><input type="checkbox" value="META"> META</label><br>
+  <label><input type="checkbox" value="NVDA"> NVDA</label><br>
+
+  <button onclick="subscribe()">Subscribe</button>
+
+  <h3>Live Prices</h3>
+  <div id="prices"></div>
+</div>
+
+<script>
+  let socket;
+
+  function login() {
+    document.getElementById("dashboard").style.display = "block";
+    socket = new WebSocket("ws://localhost:3000");
+
+    socket.onmessage = event => {
+      const data = JSON.parse(event.data);
+      if (data.type === "PRICE_UPDATE") {
+        const pricesDiv = document.getElementById("prices");
+        pricesDiv.innerHTML = "";
+
+        for (let stock in data.prices) {
+          pricesDiv.innerHTML +=
+            `<div class="stock">${stock}: $${data.prices[stock]}</div>`;
+        }
+      }
+    };
+  }
+
+  function subscribe() {
+    const checked = document.querySelectorAll("input[type=checkbox]:checked");
+    const stocks = Array.from(checked).map(cb => cb.value);
+
+    socket.send(JSON.stringify({
+      type: "SUBSCRIBE",
+      stocks
+    }));
+  }
+</script>
+
+</body>
+</html>
